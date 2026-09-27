@@ -73,3 +73,35 @@ describe('draftInputAfterSave (US-10)', () => {
   it('el formulario que queda no se puede volver a guardar sin cargar un monto', () =>
     expect(validateTransactionDraft(parseDraftInput(draftInputAfterSave(saved, TODAY)), TODAY)).toHaveProperty('amount'))
 })
+describe('Valores por defecto y restricciones del formulario (US-04, US-05, US-07, US-08)', () => {
+  it('US-04: tipo precargado en gasto', () => {
+    expect(emptyDraftInput(TODAY).type).toBe('expense')
+  })
+
+  it('US-05: moneda precargada en ARS', () => {
+    expect(emptyDraftInput(TODAY).currency).toBe('ARS')
+  })
+
+  it('US-07: cuenta precargada con la última usada tras guardar', () => {
+    const previous: DraftInput = {
+      ...emptyDraftInput(TODAY),
+      accountId: 'acc-last',
+      accountType: 'cash',
+      amount: '500',
+    }
+    const after = draftInputAfterSave(previous, TODAY)
+    expect(after.accountId).toBe('acc-last')
+    expect(after.accountType).toBe('cash')
+  })
+
+  it('US-08: es válido y guarda sin descripción', () => {
+    const draft = parseDraftInput({
+      ...emptyDraftInput(TODAY),
+      amount: '1000',
+      categoryId: 'cat-1',
+      accountId: 'acc-1',
+      accountType: 'cash',
+    })
+    expect(validateTransactionDraft(draft, TODAY)).toEqual({})
+  })
+})
