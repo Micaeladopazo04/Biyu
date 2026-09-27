@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { computeMonthlySummary, type SummaryEntry } from '@/domain/summary'
+import {
+  computeMonthlySummary,
+  countDaysWithTransactions,
+  type SummaryEntry,
+} from '@/domain/summary'
 
 const entry = (o: Partial<SummaryEntry> & { tx?: Partial<SummaryEntry['transaction']> }): SummaryEntry => ({
   period: '2026-09-01', installment_number: 1, amount_ars: '100.00',
@@ -44,5 +48,38 @@ describe('computeMonthlySummary', () => {
     )
     expect(s.expenses.toFixed(2)).toBe('120000.00')
     expect(s.netOfReimbursements.toFixed(2)).toBe('60000.00')
+  })
+})
+
+describe('countDaysWithTransactions (US-32: Días del mes con al menos un registro)', () => {
+  it('devuelve 0 si la lista de transacciones está vacía', () => {
+    expect(countDaysWithTransactions([], P)).toBe(0)
+  })
+
+  it('cuenta correctamente días distintos con transacciones activas dentro del período', () => {
+    const transactions = [
+      { occurred_on: '2026-09-01', deleted_at: null },
+      { occurred_on: '2026-09-01', deleted_at: null },
+      { occurred_on: '2026-09-15', deleted_at: null },
+    ]
+    expect(countDaysWithTransactions(transactions, P)).toBe(2)
+  })
+
+  it('ignora transacciones borradas (soft delete)', () => {
+    const transactions = [
+      { occurred_on: '2026-09-01', deleted_at: null },
+      { occurred_on: '2026-09-10', deleted_at: '2026-09-10T12:00:00Z' },
+      { occurred_on: '2026-09-20', deleted_at: null },
+    ]
+    expect(countDaysWithTransactions(transactions, P)).toBe(2)
+  })
+
+  it('ignora transacciones que corresponden a otros períodos', () => {
+    const transactions = [
+      { occurred_on: '2026-08-31', deleted_at: null },
+      { occurred_on: '2026-09-05', deleted_at: null },
+      { occurred_on: '2026-10-01', deleted_at: null },
+    ]
+    expect(countDaysWithTransactions(transactions, P)).toBe(1)
   })
 })

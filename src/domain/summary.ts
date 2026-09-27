@@ -76,3 +76,28 @@ export function computeMonthlySummary(
     byAccount,
   }
 }
+export interface ConsistencyTransaction {
+  occurred_on: string // YYYY-MM-DD
+  deleted_at: string | null
+}
+
+/**
+ * Cuenta cuántos días distintos del período tienen al menos una transacción no borrada (US-32, FR-20).
+ * Parte de transactions (occurred_on), no de ledger_entries (04-data-model, consulta 7).
+ */
+export function countDaysWithTransactions(
+  transactions: ConsistencyTransaction[],
+  period: Period,
+): number {
+  const prefix = formatPeriod(period) // "YYYY-MM"
+  const distinctDays = new Set<string>()
+
+  for (const tx of transactions) {
+    if (tx.deleted_at !== null) continue // I10: filtra borradas
+    if (!tx.occurred_on.startsWith(prefix)) continue // Solo transacciones del período consultado
+
+    distinctDays.add(tx.occurred_on)
+  }
+
+  return distinctDays.size
+}
