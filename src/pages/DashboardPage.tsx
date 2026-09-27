@@ -4,9 +4,14 @@ import { Button } from '@/components/ui/button'
 import { formatPeriod } from '@/domain/period'
 import { usePeriodParam } from '@/hooks/usePeriodParam'
 
-// Esqueleto: el selector de mes real es US-26; esto prueba que el período vive en la URL (C11).
-export function DashboardPage() {
+interface DashboardPageProps {
+  entriesCount?: number
+}
+
+export function DashboardPage({ entriesCount = 0 }: DashboardPageProps) {
   const { period, shift } = usePeriodParam()
+  const hasData = entriesCount > 0
+
   return (
     <AppShell
       actions={
@@ -21,6 +26,28 @@ export function DashboardPage() {
         <span data-testid="dashboard-period">{formatPeriod(period)}</span>
         <Button variant="outline" onClick={() => shift(1)} data-testid="dashboard-period-next">→</Button>
       </div>
+
+      {!hasData ? (
+        <div
+          data-testid="dashboard-empty-state"
+          className="mt-8 flex flex-col items-center justify-center rounded-lg border border-dashed p-8 text-center"
+        >
+          <p className="text-muted-foreground text-sm">
+            No hay registros para este período.
+          </p>
+          <Link
+            to="/register"
+            data-testid="dashboard-empty-register-link"
+            className="mt-4 inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow hover:bg-primary/90"
+          >
+            Registrar transacción
+          </Link>
+        </div>
+      ) : (
+        <div data-testid="dashboard-content" className="mt-6">
+          {/* Métricas y contenido del dashboard cuando hay datos */}
+        </div>
+      )}
     </AppShell>
   )
 }
